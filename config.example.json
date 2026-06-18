@@ -3,6 +3,11 @@
 
   "send_to": "you@example.com",
 
+  "_mailer_note": "'smtp' works locally. On Render/cloud SMTP is blocked — set mailer to 'resend'.",
+  "mailer": "smtp",
+  "resend_api_key": "PASTE_RESEND_API_KEY_FOR_CLOUD_OR_USE_RESEND_API_KEY_ENV",
+  "resend_from": "AI News Agent <onboarding@resend.dev>",
+
   "smtp": {
     "sender_email": "you@gmail.com",
     "app_password": "PASTE_16_CHAR_GMAIL_APP_PASSWORD_HERE",

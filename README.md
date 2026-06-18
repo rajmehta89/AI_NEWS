@@ -94,13 +94,24 @@ from environment variables.
 2. On https://render.com → **New + → Blueprint** → connect this repo.
    Render reads `render.yaml` and creates a Cron Job.
 3. In the service's **Environment** tab, set these secrets:
+   - `RESEND_API_KEY` — your Resend key (see below — Render blocks SMTP, so cloud uses Resend)
    - `SEND_TO` — who receives the emails
-   - `SMTP_SENDER_EMAIL` — your Gmail address
-   - `SMTP_APP_PASSWORD` — your 16-char Gmail App Password
    - `COHERE_API_KEY` — your Cohere key
-   (`PROVIDER`, `COHERE_MODEL`, `USE_AI` are pre-filled in `render.yaml`.)
+   (`MAILER=resend`, `RESEND_FROM`, `PROVIDER`, `COHERE_MODEL`, `USE_AI` are pre-filled in `render.yaml`.)
 4. Schedule is in `render.yaml` (`30 1 * * *` = 01:30 UTC = 7:00 AM IST). Edit to taste.
 5. Use **"Trigger Run"** in Render to test it immediately.
+
+> ⚠️ **Important: Render blocks outbound SMTP (ports 25/465/587).** Gmail SMTP will
+> fail with `Network is unreachable`. That's why cloud runs use **Resend** (HTTPS).
+> Also make sure the service is a **Cron Job**, not a Web Service (the Blueprint sets
+> this) — a Web Service fails with "No open ports detected".
+
+**Get a Resend API key (free):**
+1. Sign up at **https://resend.com** (use your Gmail so you can email yourself without a domain).
+2. **API Keys** → **Create API Key** → copy it (`re_...`).
+3. Set it as `RESEND_API_KEY` in Render.
+4. Default sender is `onboarding@resend.dev` (Resend's test sender). To send to *any*
+   address or use your own from-address, verify a domain in Resend and set `RESEND_FROM`.
 
 **Run the Docker image locally instead:**
 ```
@@ -118,8 +129,11 @@ docker run --rm \
 | Var | Meaning |
 |---|---|
 | `SEND_TO` | recipient email |
-| `SMTP_SENDER_EMAIL` | Gmail you send from |
-| `SMTP_APP_PASSWORD` | Gmail App Password (see guide above) |
+| `MAILER` | `smtp` (local default) or `resend` (cloud/Render) |
+| `RESEND_API_KEY` | Resend key — required when `MAILER=resend` |
+| `RESEND_FROM` | sender, default `AI News Agent <onboarding@resend.dev>` |
+| `SMTP_SENDER_EMAIL` | Gmail you send from (SMTP/local only) |
+| `SMTP_APP_PASSWORD` | Gmail App Password (SMTP/local only) |
 | `SMTP_HOST` / `SMTP_PORT` | default `smtp.gmail.com` / `465` |
 | `PROVIDER` | `cohere` (default) or `anthropic` |
 | `COHERE_API_KEY` / `COHERE_MODEL` | Cohere key + model |

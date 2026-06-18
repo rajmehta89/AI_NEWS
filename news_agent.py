@@ -70,6 +70,12 @@ def _apply_env(config):
         smtp["port"] = int(g("SMTP_PORT"))
     smtp.setdefault("host", "smtp.gmail.com")
     smtp.setdefault("port", 465)
+    if g("MAILER"):
+        config["mailer"] = g("MAILER")
+    if g("RESEND_API_KEY"):
+        config["resend_api_key"] = g("RESEND_API_KEY")
+    if g("RESEND_FROM"):
+        config["resend_from"] = g("RESEND_FROM")
     if g("PROVIDER"):
         config["provider"] = g("PROVIDER")
     if g("COHERE_API_KEY"):
@@ -412,22 +418,55 @@ def build_text(items, title):
     return "\n".join(lines)
 
 
-def send_email(config, items, subject, title, accent="#0b66c3"):
+def _send_via_resend(config, subject, html_body):
+    """Send over HTTPS using the Resend API — works on hosts (like Render) that
+    block outbound SMTP ports."""
+    import urllib.request
+    import urllib.error
+    key = config.get("resend_api_key") or os.environ.get("RESEND_API_KEY", "")
+    if not key or "PASTE" in key:
+        sys.exit("RESEND_API_KEY not set. Get one at https://resend.com and set RESEND_API_KEY "
+                 "(env) or resend_api_key (config.json).")
+    sender = config.get("resend_from") or "AI News Agent <onboarding@resend.dev>"
+    payload = json.dumps({
+        "from": sender,
+        "to": [config["send_to"]],
+        "subject": subject,
+        "html": html_body,
+    }).encode("utf-8")
+    req = urllib.request.Request(
+        "https://api.resend.com/emails", data=payload, method="POST",
+        headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"})
+    try:
+        with urllib.request.urlopen(req, timeout=30) as r:
+            r.read()
+    except urllib.error.HTTPError as e:
+        sys.exit(f"Resend API error {e.code}: {e.read().decode('utf-8', 'replace')}")
+
+
+def _send_via_smtp(config, subject, html_body):
     smtp = config["smtp"]
     if "PASTE" in smtp.get("app_password", "") or "YOUR_" in smtp.get("sender_email", ""):
         sys.exit("\nSMTP not configured. Edit config.json -> smtp.sender_email and smtp.app_password "
                  "(create a Gmail App Password at https://myaccount.google.com/apppasswords).")
-
-    msg = MIMEText(build_html(items, title, accent), "html", "utf-8")
+    msg = MIMEText(html_body, "html", "utf-8")
     msg["Subject"] = subject
     msg["From"] = smtp["sender_email"]
     msg["To"] = config["send_to"]
-
     context = ssl.create_default_context()
     with smtplib.SMTP_SSL(smtp["host"], smtp["port"], context=context) as server:
         server.login(smtp["sender_email"], smtp["app_password"])
         server.send_message(msg)
-    print(f"✅ Sent '{subject}' ({len(items)} stories) to {config['send_to']}")
+
+
+def send_email(config, items, subject, title, accent="#0b66c3"):
+    html_body = build_html(items, title, accent)
+    mailer = config.get("mailer", "smtp").lower()
+    if mailer == "resend":
+        _send_via_resend(config, subject, html_body)
+    else:
+        _send_via_smtp(config, subject, html_body)
+    print(f"✅ Sent '{subject}' ({len(items)} stories) via {mailer} to {config['send_to']}")
 
 
 def split_news_and_stocks(stories):
