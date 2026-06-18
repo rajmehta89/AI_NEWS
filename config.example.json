@@ -1,0 +1,40 @@
+{
+  "_comment": "Copy this file to config.json and fill in your values. config.json is git-ignored so your secrets stay local.",
+
+  "send_to": "you@example.com",
+
+  "smtp": {
+    "sender_email": "you@gmail.com",
+    "app_password": "PASTE_16_CHAR_GMAIL_APP_PASSWORD_HERE",
+    "host": "smtp.gmail.com",
+    "port": 465
+  },
+
+  "use_ai": true,
+  "provider": "cohere",
+  "cohere_api_key": "PASTE_YOUR_COHERE_API_KEY_HERE_OR_USE_COHERE_API_KEY_ENV",
+  "cohere_model": "command-r-08-2024",
+  "anthropic_api_key": "PASTE_ANTHROPIC_KEY_ONLY_IF_PROVIDER_IS_ANTHROPIC",
+  "claude_model": "claude-opus-4-8",
+
+  "hours_lookback": 24,
+  "max_items": 28,
+  "final_count": 15,
+  "feeds": [
+    "https://news.google.com/rss/search?q=artificial+intelligence+OR+machine+learning+when:1d&hl=en-US&gl=US&ceid=US:en",
+    "https://news.google.com/rss/search?q=%22AI+model%22+OR+%22LLM%22+OR+%22generative+AI%22+when:1d&hl=en-US&gl=US&ceid=US:en",
+    "https://news.google.com/rss/search?q=%22OpenAI%22+OR+%22Anthropic%22+OR+%22Google+DeepMind%22+OR+%22Mistral+AI%22+OR+%22xAI%22+OR+%22Perplexity%22+OR+%22Hugging+Face%22+OR+%22Nvidia%22+OR+%22Cohere%22+OR+%22Meta+AI%22+when:1d&hl=en-US&gl=US&ceid=US:en",
+    "https://news.google.com/rss/search?q=(%22AI+startup%22+OR+%22AI+company%22)+(funding+OR+raises+OR+valuation+OR+%22Series%22+OR+IPO)+when:2d&hl=en-US&gl=US&ceid=US:en",
+    "https://news.google.com/rss/search?q=fastest+growing+AI+startup+OR+%22AI+unicorn%22+when:3d&hl=en-US&gl=US&ceid=US:en",
+    "https://techcrunch.com/category/artificial-intelligence/feed/",
+    "https://venturebeat.com/category/ai/feed/",
+    "https://www.theverge.com/rss/ai-artificial-intelligence/index.xml",
+    "https://www.technologyreview.com/topic/artificial-intelligence/feed",
+    "https://the-decoder.com/feed/",
+    "https://www.wired.com/feed/tag/ai/latest/rss",
+    "https://huggingface.co/blog/feed.xml",
+    "https://hnrss.org/newest?q=AI+OR+LLM+OR+%22machine+learning%22&points=100",
+    "https://export.arxiv.org/rss/cs.AI",
+    "https://export.arxiv.org/rss/cs.LG"
+  ]
+}
