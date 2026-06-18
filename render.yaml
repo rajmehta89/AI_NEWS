@@ -1,0 +1,26 @@
+# Render Blueprint — deploys the agent as a scheduled Cron Job.
+# In Render: New + → Blueprint → connect this repo. Then set the secret env
+# vars (marked sync:false) in the dashboard. Schedule is UTC.
+#
+# 30 1 * * *  =  01:30 UTC  =  07:00 AM IST.  (Adjust to your timezone.)
+services:
+  - type: cron
+    name: ai-news-agent
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    schedule: "30 1 * * *"
+    envVars:
+      - key: SEND_TO
+        sync: false
+      - key: SMTP_SENDER_EMAIL
+        sync: false
+      - key: SMTP_APP_PASSWORD
+        sync: false
+      - key: COHERE_API_KEY
+        sync: false
+      - key: PROVIDER
+        value: cohere
+      - key: COHERE_MODEL
+        value: command-r-08-2024
+      - key: USE_AI
+        value: "true"

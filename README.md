@@ -84,7 +84,51 @@ or double-click **run.bat**.
 
 ---
 
-## Run automatically at 7:30 AM (Windows)
+## Deploy to the cloud with Docker + Render (runs even when your PC is off)
+
+This repo includes a `Dockerfile` and `render.yaml` so you can run it as a
+**Render Cron Job**. No `config.json` is needed in the cloud — all settings come
+from environment variables.
+
+1. Push this repo to GitHub (already done: `rajmehta89/AI_NEWS`).
+2. On https://render.com → **New + → Blueprint** → connect this repo.
+   Render reads `render.yaml` and creates a Cron Job.
+3. In the service's **Environment** tab, set these secrets:
+   - `SEND_TO` — who receives the emails
+   - `SMTP_SENDER_EMAIL` — your Gmail address
+   - `SMTP_APP_PASSWORD` — your 16-char Gmail App Password
+   - `COHERE_API_KEY` — your Cohere key
+   (`PROVIDER`, `COHERE_MODEL`, `USE_AI` are pre-filled in `render.yaml`.)
+4. Schedule is in `render.yaml` (`30 1 * * *` = 01:30 UTC = 7:00 AM IST). Edit to taste.
+5. Use **"Trigger Run"** in Render to test it immediately.
+
+**Run the Docker image locally instead:**
+```
+docker build -t ai-news-agent .
+docker run --rm \
+  -e SEND_TO=you@gmail.com \
+  -e SMTP_SENDER_EMAIL=you@gmail.com \
+  -e SMTP_APP_PASSWORD=your16charapppw \
+  -e COHERE_API_KEY=your_cohere_key \
+  ai-news-agent
+```
+
+### Environment variables (cloud / Docker)
+
+| Var | Meaning |
+|---|---|
+| `SEND_TO` | recipient email |
+| `SMTP_SENDER_EMAIL` | Gmail you send from |
+| `SMTP_APP_PASSWORD` | Gmail App Password (see guide above) |
+| `SMTP_HOST` / `SMTP_PORT` | default `smtp.gmail.com` / `465` |
+| `PROVIDER` | `cohere` (default) or `anthropic` |
+| `COHERE_API_KEY` / `COHERE_MODEL` | Cohere key + model |
+| `ANTHROPIC_API_KEY` / `CLAUDE_MODEL` | only if `PROVIDER=anthropic` |
+| `USE_AI` | `true` to use the LLM, `false` for raw RSS |
+
+---
+
+## Run automatically at 7:30 AM (Windows, local)
 
 A Task Scheduler job named **"Daily AI News"** runs `run.bat` daily at 7:30 AM.
 Manage it in **Task Scheduler** under that name.

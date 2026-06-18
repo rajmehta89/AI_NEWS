@@ -15,6 +15,7 @@ Test (no email, prints both digests): python news_agent.py --dry-run
 """
 
 import json
+import os
 import sys
 import smtplib
 import ssl
@@ -32,12 +33,68 @@ except ImportError:
 
 CONFIG_PATH = Path(__file__).with_name("config.json")
 
+# Used when no config.json is present (e.g. running in Docker/Render via env vars).
+DEFAULT_FEEDS = [
+    "https://news.google.com/rss/search?q=artificial+intelligence+OR+machine+learning+when:1d&hl=en-US&gl=US&ceid=US:en",
+    "https://news.google.com/rss/search?q=%22AI+model%22+OR+%22LLM%22+OR+%22generative+AI%22+when:1d&hl=en-US&gl=US&ceid=US:en",
+    "https://news.google.com/rss/search?q=%22OpenAI%22+OR+%22Anthropic%22+OR+%22Google+DeepMind%22+OR+%22Mistral+AI%22+OR+%22xAI%22+OR+%22Perplexity%22+OR+%22Hugging+Face%22+OR+%22Nvidia%22+OR+%22Cohere%22+OR+%22Meta+AI%22+when:1d&hl=en-US&gl=US&ceid=US:en",
+    "https://news.google.com/rss/search?q=(%22AI+startup%22+OR+%22AI+company%22)+(funding+OR+raises+OR+valuation+OR+%22Series%22+OR+IPO)+when:2d&hl=en-US&gl=US&ceid=US:en",
+    "https://news.google.com/rss/search?q=fastest+growing+AI+startup+OR+%22AI+unicorn%22+when:3d&hl=en-US&gl=US&ceid=US:en",
+    "https://techcrunch.com/category/artificial-intelligence/feed/",
+    "https://venturebeat.com/category/ai/feed/",
+    "https://www.theverge.com/rss/ai-artificial-intelligence/index.xml",
+    "https://www.technologyreview.com/topic/artificial-intelligence/feed",
+    "https://the-decoder.com/feed/",
+    "https://www.wired.com/feed/tag/ai/latest/rss",
+    "https://huggingface.co/blog/feed.xml",
+    "https://hnrss.org/newest?q=AI+OR+LLM+OR+%22machine+learning%22&points=100",
+    "https://export.arxiv.org/rss/cs.AI",
+    "https://export.arxiv.org/rss/cs.LG",
+]
+
+
+def _apply_env(config):
+    """Overlay environment variables on top of config (env wins). Lets the agent
+    run in Docker/Render with no config.json — everything comes from env vars."""
+    g = os.environ.get
+    if g("SEND_TO"):
+        config["send_to"] = g("SEND_TO")
+    smtp = config.setdefault("smtp", {})
+    if g("SMTP_SENDER_EMAIL"):
+        smtp["sender_email"] = g("SMTP_SENDER_EMAIL")
+    if g("SMTP_APP_PASSWORD"):
+        smtp["app_password"] = g("SMTP_APP_PASSWORD")
+    if g("SMTP_HOST"):
+        smtp["host"] = g("SMTP_HOST")
+    if g("SMTP_PORT"):
+        smtp["port"] = int(g("SMTP_PORT"))
+    smtp.setdefault("host", "smtp.gmail.com")
+    smtp.setdefault("port", 465)
+    if g("PROVIDER"):
+        config["provider"] = g("PROVIDER")
+    if g("COHERE_API_KEY"):
+        config["cohere_api_key"] = g("COHERE_API_KEY")
+    if g("COHERE_MODEL"):
+        config["cohere_model"] = g("COHERE_MODEL")
+    if g("ANTHROPIC_API_KEY"):
+        config["anthropic_api_key"] = g("ANTHROPIC_API_KEY")
+    if g("CLAUDE_MODEL"):
+        config["claude_model"] = g("CLAUDE_MODEL")
+    if g("USE_AI"):
+        config["use_ai"] = g("USE_AI").strip().lower() in ("1", "true", "yes", "on")
+    config.setdefault("feeds", DEFAULT_FEEDS)
+    return config
+
 
 def load_config():
-    if not CONFIG_PATH.exists():
-        sys.exit(f"Config not found: {CONFIG_PATH}")
-    with open(CONFIG_PATH, "r", encoding="utf-8") as f:
-        return json.load(f)
+    config = {}
+    if CONFIG_PATH.exists():
+        with open(CONFIG_PATH, "r", encoding="utf-8") as f:
+            config = json.load(f)
+    config = _apply_env(config)
+    if not config.get("send_to"):
+        sys.exit("No recipient configured. Set 'send_to' in config.json or the SEND_TO env var.")
+    return config
 
 
 def clean(text):
