@@ -454,14 +454,30 @@ def _send_via_smtp(config, subject, html_body):
     msg["From"] = smtp["sender_email"]
     msg["To"] = config["send_to"]
     context = ssl.create_default_context()
-    with smtplib.SMTP_SSL(smtp["host"], smtp["port"], context=context) as server:
-        server.login(smtp["sender_email"], smtp["app_password"])
-        server.send_message(msg)
+    try:
+        with smtplib.SMTP_SSL(smtp["host"], smtp["port"], context=context) as server:
+            server.login(smtp["sender_email"], smtp["app_password"])
+            server.send_message(msg)
+    except OSError as e:
+        sys.exit(f"\nSMTP connection failed ({e}). Many cloud hosts (e.g. Render) BLOCK "
+                 "outbound SMTP. Use Resend instead: set MAILER=resend and RESEND_API_KEY "
+                 "(get a free key at https://resend.com).")
+
+
+def choose_mailer(config):
+    """Pick the mailer. Explicit 'mailer' wins; otherwise auto-use Resend whenever
+    a Resend key is available (e.g. on Render, where SMTP is blocked)."""
+    mailer = config.get("mailer")
+    if mailer:
+        return mailer.lower()
+    if config.get("resend_api_key") or os.environ.get("RESEND_API_KEY"):
+        return "resend"
+    return "smtp"
 
 
 def send_email(config, items, subject, title, accent="#0b66c3"):
     html_body = build_html(items, title, accent)
-    mailer = config.get("mailer", "smtp").lower()
+    mailer = choose_mailer(config)
     if mailer == "resend":
         _send_via_resend(config, subject, html_body)
     else:
