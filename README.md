@@ -1,15 +1,15 @@
-# Daily AI/ML News Agent (Claude-powered)
+# Daily AI/ML News Agent (AI-powered)
 
 A Python agent that every morning:
 1. **Gathers** worldwide AI/ML news from the last 24h (15 free RSS sources).
-2. **Reads it with Claude** — Claude drops noise/duplicates, writes a clean one-line
-   summary for each story, ranks by importance, groups by topic, and **separates
-   stock-market items from real AI news**.
+2. **Reads it with an LLM** (Cohere by default; Anthropic optional) — drops
+   noise/duplicates, writes a clean one-line summary for each story, ranks by
+   importance, groups by topic, and **separates stock-market items from real AI news**.
 3. **Emails you TWO digests:**
    - 🗞️ **Daily AI Newspaper** — the AI/ML news
    - 📈 **Daily AI Stock & Market Watch** — AI stock/market items (separate email)
 
-If Claude is turned off or unavailable, it falls back to a single plain RSS email.
+If the LLM is off/unavailable, it falls back to a single plain RSS email.
 
 ---
 
@@ -17,10 +17,10 @@ If Claude is turned off or unavailable, it falls back to a single plain RSS emai
 
 | Requirement | Why | Cost |
 |---|---|---|
-| **Python 3** (installed: 3.14) | Runs the agent | free |
-| **feedparser** + **anthropic** | Read feeds + call Claude (`pip install -r requirements.txt`) | free |
-| **Gmail App Password** | So the script can send the emails | free |
-| **Anthropic API key** | So Claude can edit/summarize/split the news | ~pennies/day (see below) |
+| **Python 3** | Runs the agent | free |
+| **feedparser + cohere** | Read feeds + call the LLM (`pip install -r requirements.txt`) | free |
+| **Cohere API key** | So the LLM can edit/summarize/split the news | free trial tier |
+| **Gmail App Password** | So the script can send the two emails | free |
 
 ---
 
@@ -31,26 +31,39 @@ If Claude is turned off or unavailable, it falls back to a single plain RSS emai
    pip install -r requirements.txt
    ```
 
-2. **Gmail App Password** (for sending):
-   - Turn on 2-Step Verification, then go to https://myaccount.google.com/apppasswords
-   - Create one, copy the 16-character code.
+2. **Get a Cohere API key** — https://dashboard.cohere.com/api-keys (free trial key works).
 
-3. **Anthropic API key** (for Claude):
-   - Get it from https://console.anthropic.com → API Keys.
+3. **Get a Gmail App Password** (needed to send email — see detailed steps below).
 
-4. **Edit `config.json`:**
-   - `send_to` → who receives the emails (currently `rajm267749@gmail.com`)
-   - `smtp.sender_email` / `smtp.app_password` → your Gmail + the 16-char App Password
-   - `anthropic_api_key` → your Claude API key (or leave it and set the `ANTHROPIC_API_KEY` env var)
-   - `claude_model` → `claude-opus-4-8` (smartest). Switch to `claude-haiku-4-5` or
-     `claude-sonnet-4-6` for lower cost (see pricing).
-   - `use_claude` → `true` to use Claude, `false` for plain RSS mode.
+4. **Create your config**
+   - Copy `config.example.json` to `config.json`.
+   - Fill in: `send_to`, `smtp.sender_email`, `smtp.app_password`, `cohere_api_key`.
+   - `config.json` is git-ignored, so your keys stay private.
+
+---
+
+## How to get a Gmail App Password (step by step)
+
+A Gmail App Password is a special 16-character password that lets a script send
+mail from your account. (Your normal Gmail password will not work for SMTP.)
+
+1. Go to your Google Account: **https://myaccount.google.com**
+2. Open **Security** in the left menu.
+3. Turn ON **2-Step Verification** (App Passwords only exist once this is on).
+4. Now open **https://myaccount.google.com/apppasswords**
+5. Type a name like `AI News Agent` and click **Create**.
+6. Google shows a **16-character code** (like `abcd efgh ijkl mnop`).
+7. Copy it, remove the spaces, and paste it into `config.json` →
+   `smtp.app_password`. Also set `smtp.sender_email` to that same Gmail address.
+
+> If `https://myaccount.google.com/apppasswords` says "not available", it's
+> because 2-Step Verification isn't on yet — do step 3 first.
 
 ---
 
 ## Use
 
-Preview both digests without sending (no email, prints to screen):
+Preview both digests without sending:
 ```
 python news_agent.py --dry-run
 ```
@@ -62,32 +75,25 @@ or double-click **run.bat**.
 
 ---
 
-## Cost (Claude)
+## Provider & model (config.json)
 
-One run reads ~28 short headlines and writes ~15 summaries — a tiny request.
-Rough cost **per day** by model:
-
-| Model (`claude_model`) | ~Cost/day | ~Cost/month |
-|---|---|---|
-| `claude-opus-4-8` (smartest) | ~$0.09 | ~$2.70 |
-| `claude-sonnet-4-6` (balanced) | ~$0.05 | ~$1.50 |
-| `claude-haiku-4-5` (cheapest) | ~$0.02 | ~$0.60 |
-
-Change the model in `config.json` anytime.
+- `provider`: `"cohere"` (default) or `"anthropic"`.
+- `cohere_model`: e.g. `command-r-08-2024` (default) or `command-a-03-2025` (smartest).
+- `claude_model`: used only if `provider` is `"anthropic"` (e.g. `claude-opus-4-8`).
+- `use_ai`: `true` to use the LLM, `false` for plain RSS mode.
 
 ---
 
-## Run automatically at 7:30 AM (already set up)
+## Run automatically at 7:30 AM (Windows)
 
-A Windows Task Scheduler job named **"Daily AI News"** runs `run.bat` daily at 7:30 AM.
-To change/remove it: open **Task Scheduler** → find "Daily AI News".
+A Task Scheduler job named **"Daily AI News"** runs `run.bat` daily at 7:30 AM.
+Manage it in **Task Scheduler** under that name.
 
 ---
 
-## Customize (`config.json`)
+## Customize feeds & counts (config.json)
 
 - `hours_lookback` — how far back to pull news (default 24)
-- `max_items` — how many raw stories to hand Claude (default 28)
-- `final_count` — how many AI-news stories Claude keeps for the newspaper (default 15;
-  stock items are kept separately on top)
+- `max_items` — how many raw stories to hand the LLM (default 28)
+- `final_count` — how many AI-news stories to keep (default 15; stock items kept separately)
 - `feeds` — add/remove any RSS/Atom source

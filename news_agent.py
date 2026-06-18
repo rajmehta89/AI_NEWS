@@ -1,14 +1,14 @@
 """
-Daily AI/ML News Agent (Claude-powered)
----------------------------------------
+Daily AI/ML News Agent (AI-powered)
+-----------------------------------
 1. Pulls worldwide AI/ML news from the last 24h via RSS feeds.
-2. Claude edits it: drops noise/dupes, writes clean one-line summaries,
-   ranks by importance, groups by topic, and SPLITS stock-market items
-   away from real AI news.
+2. An LLM editor (Cohere by default, Anthropic optional) drops noise/dupes,
+   writes clean one-line summaries, ranks by importance, groups by topic,
+   and SPLITS stock-market items away from real AI news.
 3. Emails TWO digests to the address in config.json:
      - "Daily AI Newspaper"          (AI/ML news)
      - "Daily AI Stock & Market Watch" (AI stock/market items)
-   If Claude is off/unavailable it falls back to a single raw-feed email.
+   If the editor is off/unavailable it falls back to a single raw-feed email.
 
 Run:  python news_agent.py
 Test (no email, prints both digests): python news_agent.py --dry-run
