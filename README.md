@@ -84,7 +84,28 @@ or double-click **run.bat**.
 
 ---
 
-## Deploy to the cloud with Docker + Render (runs even when your PC is off)
+## Run it free in the cloud — GitHub Actions (recommended)
+
+Render Cron Jobs are **not free** (min ~$1/mo). **GitHub Actions is free** and runs
+your schedule in the cloud even when your PC is off. It also allows SMTP, so your
+**Gmail App Password works** — no Resend needed. A workflow is included at
+`.github/workflows/daily-news.yml` (daily at 01:30 UTC = 07:00 AM IST).
+
+**Setup (one time):**
+1. In your GitHub repo → **Settings → Secrets and variables → Actions → New repository secret**.
+2. Add these secrets:
+   - `SEND_TO` = your email
+   - `SMTP_SENDER_EMAIL` = your Gmail
+   - `SMTP_APP_PASSWORD` = your 16-char Gmail App Password
+   - `COHERE_API_KEY` = your Cohere key
+3. Go to the **Actions** tab → enable workflows → open **Daily AI News** → **Run workflow**
+   to test now. After that it runs automatically every day.
+
+That's it — fully free, no card, no Resend, no Render.
+
+---
+
+## Deploy to the cloud with Docker + Render (paid — Cron Jobs cost ~$1/mo+)
 
 This repo includes a `Dockerfile` and `render.yaml` so you can run it as a
 **Render Cron Job**. No `config.json` is needed in the cloud — all settings come
